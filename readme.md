@@ -5,4 +5,4 @@ This is a group university project created for our Artificial Intelligence class
 Project is: _in progress_
 
 ## Contact
-This project has been created by @joshsteiner, @daniellesaldanha and @?.
+This project has been created by @joshsteiner, @daniellesaldanha and @paulinaborys.
