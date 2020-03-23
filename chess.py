@@ -90,13 +90,14 @@ def get_piece_type(piece):
     return piece & ~1
 
 
-def is_offboard(position):
+def is_offboard(position, board):
     """ Returns true if position lies off board """
+    n_rows, n_cols = board.shape
     return (
         position[0] < 0
         or position[1] < 0
-        or position[0] >= 8
-        or position[1] >= 8
+        or position[0] >= n_rows
+        or position[1] >= n_cols
     )
 
 
@@ -106,7 +107,7 @@ def offset(p, d):
 
 
 def score_board_material(board):
-    score_board = np.zeros((8, 8), dtype=np.int64)
+    score_board = np.zeros(board.shape, dtype=np.int64)
     pieces = get_piece_type(board)
     score_board[pieces == KING] = 900
     score_board[pieces == QUEEN] = 90
@@ -123,14 +124,13 @@ def print_board(board):
         PAWN: 'p', KNIGHT: 'n', BISHOP: 'b',
         ROOK: 'r', QUEEN: 'q', KING: 'k',
     }
+    n_rows, n_cols = board.shape
     print("  ", end="")
-    for i in range(8):
-        print(chr(ord('a') + i), end=" ")
+    for c in range(n_cols):
+        print(chr(ord('a') + c), end=" ")
     print()
-    j = 8
-    for row in board[::-1]:
-        print(j, end=" ")
-        j -= 1
+    for row_number, row in enumerate(board[::-1]):
+        print(n_rows - row_number, end=" ")
         for piece in row:
             if piece == EMPTY_SQUARE:
                 print(".", end=" ")
@@ -172,10 +172,11 @@ def undo_move(board, move):
 
 def possible_moves(board, color, ignore_checks=False):
     """ Generate all possible moves for color at given position """
-    SQUARES = np.array([(r, c)
-                       for r in range(8)
-                       for c in range(8)])
-    for square in SQUARES:
+    n_rows, n_cols = board.shape
+    squares = np.array([(r, c)
+                       for r in range(n_rows)
+                       for c in range(n_cols)])
+    for square in squares:
         for move_result in possible_moves_from_position(board, color, square):
             if ignore_checks or not is_in_check(board, color):
                 yield Move(square, *move_result)
@@ -188,7 +189,7 @@ def possible_moves_from_position(board, color, position):
         """ Generate moves for step/jump movers (K, N) """
         for direction in directions:
             new_position = offset(position, direction)
-            if not is_offboard(new_position):
+            if not is_offboard(new_position, board):
                 piece = board[new_position[0], new_position[1]]
                 if piece == EMPTY_SQUARE or get_color(piece) != color:
                     yield PartialMove(new_position, piece, None)
@@ -201,7 +202,7 @@ def possible_moves_from_position(board, color, position):
                 new_position = offset(
                     position,
                     (i * direction[0], i * direction[1]))
-                if is_offboard(new_position):
+                if is_offboard(new_position, board):
                     break
                 else:
                     piece = board[new_position[0], new_position[1]]
@@ -221,7 +222,7 @@ def possible_moves_from_position(board, color, position):
         promotion_row = (WHITE_PROMOTION_ROW
                          if color == WHITE
                          else BLACK_PROMOTION_ROW)
-        if (not is_offboard(new_position)
+        if (not is_offboard(new_position, board)
            and board[new_position[0], new_position[1]] == EMPTY_SQUARE):
             if new_position[0] == promotion_row:
                 for promotion_piece in [PAWN, KNIGHT, BISHOP, ROOK, QUEEN]:
@@ -239,7 +240,7 @@ def possible_moves_from_position(board, color, position):
         # TODO: capture promotion
         for column in (-1, 1):
             new_position = offset(position, (direction, column))
-            if not is_offboard(new_position):
+            if not is_offboard(new_position, board):
                 piece_on_new_position = board[new_position[0], new_position[1]]
                 if (piece_on_new_position != EMPTY_SQUARE
                    and get_color(piece_on_new_position) != color):
@@ -319,7 +320,9 @@ def choose_best_move_minimax(board, color):
     else:
         f = min
         best_score = math.inf
+    possible_move_cnt = 0
     for move in possible_moves(board, color):
+        possible_move_cnt += 1
         apply_move(board, move)
         child_score = minimax(
             board,
@@ -335,6 +338,7 @@ def choose_best_move_minimax(board, color):
             else:
                 best_moves = [move]
             best_score = child_score
+    print(f"possible moves = {possible_move_cnt}")
     return best_moves[randint(0, len(best_moves)) - 1]
 
 
