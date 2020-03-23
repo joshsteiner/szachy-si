@@ -52,7 +52,7 @@ KNIGHT_DIRECTIONS = np.array([[-2, -1], [-2, +1], [-1, -2], [-1, +2],
                              [+1, -2], [+1, +2], [+2, -1], [+2, +1]])
 
 
-_board = np.array([
+board = np.array([
     [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN,
      WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK],
     [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN,
@@ -67,25 +67,6 @@ _board = np.array([
      EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
     [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN,
      BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN],
-    [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN,
-     BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]
-])
-
-board = np.array([
-    [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN,
-     WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
-    [EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE,
-     EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE, EMPTY_SQUARE],
     [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN,
      BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]
 ])
@@ -161,7 +142,7 @@ def print_board(board):
         print()
 
 
-def is_in_check__(board, color):
+def is_in_check(board, color):
     """ Returns True if color is in check """
     r, c = np.where(board == color | KING)
     king_position = np.array([r[0], c[0]])
@@ -169,22 +150,6 @@ def is_in_check__(board, color):
         if (move_dest == king_position).all():
             return True
     return False
-
-
-def is_in_check(board, color):
-    """ Returns True if color is in check """
-    PIECES = [PAWN, KNIGHT, BISHOP, ROOK, QUEEN]
-    r, c = np.where(board == color | KING)
-    pos = np.array([r[0], c[0]])
-    for piece in PIECES:
-        board[pos[0], pos[1]] = color | piece
-        for _, capture, _ in possible_moves_from_position(board, color, pos):
-            if capture == (piece | switch_color(color)):
-                board[pos[0], pos[1]] = color | KING
-                return True
-    else:
-        board[pos[0], pos[1]] = color | KING
-        return False
 
 
 def apply_move(board, move):
