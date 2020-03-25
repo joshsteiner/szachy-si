@@ -9,7 +9,7 @@ import math
 
 counter = 0
 
-SEARCH_DEPTH = 1
+SEARCH_DEPTH = 4
 
 # piece format:
 #  3 bits piece type, 1 bit color
@@ -119,11 +119,13 @@ def score_board_material(board):
     return score_board.sum()
 
 
+PIECE_REPR = {
+    PAWN: 'p', KNIGHT: 'n', BISHOP: 'b',
+    ROOK: 'r', QUEEN: 'q', KING: 'k',
+}
+
+
 def print_board(board):
-    piece_repr = {
-        PAWN: 'p', KNIGHT: 'n', BISHOP: 'b',
-        ROOK: 'r', QUEEN: 'q', KING: 'k',
-    }
     n_rows, n_cols = board.shape
     print("  ", end="")
     for c in range(n_cols):
@@ -135,20 +137,33 @@ def print_board(board):
             if piece == EMPTY_SQUARE:
                 print(".", end=" ")
                 continue
-            piece_str = piece_repr[get_piece_type(piece)]
+            piece_str = PIECE_REPR[get_piece_type(piece)]
             if get_color(piece) == BLACK:
                 piece_str = piece_str.upper()
             print(piece_str, end=" ")
         print()
 
 
-def is_in_check(board, color):
+def is_in_check_(board, color):
     """ Returns True if color is in check """
+    for _, _, capture, _ in possible_moves(board, switch_color(color), True):
+        if capture != EMPTY_SQUARE and get_piece_type(capture) == KING:
+            return True
+    return False
+
+
+def is_in_check(board, color):
+    """ Return True if color is in check """
     r, c = np.where(board == color | KING)
     king_position = np.array([r[0], c[0]])
-    for _, move_dest, _, _ in possible_moves(board, switch_color(color), True):
-        if (move_dest == king_position).all():
-            return True
+    for piece in [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING]:
+        board[king_position[0], king_position[1]] = piece | color
+        moves = possible_moves_from_position(board, color, king_position)
+        for _, capture, _ in moves:
+            if capture != EMPTY_SQUARE and get_piece_type(capture) == piece:
+                board[king_position[0], king_position[1]] = KING | color
+                return True
+    board[king_position[0], king_position[1]] = KING | color
     return False
 
 
@@ -178,8 +193,16 @@ def possible_moves(board, color, ignore_checks=False):
                        for c in range(n_cols)])
     for square in squares:
         for move_result in possible_moves_from_position(board, color, square):
-            if ignore_checks or not is_in_check(board, color):
-                yield Move(square, *move_result)
+            move = Move(square, *move_result)
+            if ignore_checks:
+                yield move
+            else:
+                apply_move(board, move)
+                if not is_in_check(board, color):
+                    undo_move(board, move)
+                    yield move
+                else:
+                    undo_move(board, move)
 
 
 def possible_moves_from_position(board, color, position):
