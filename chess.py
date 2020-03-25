@@ -279,7 +279,7 @@ def possible_moves_from_position(board, color, position):
         if color == WHITE:
             yield from pawn_move(+1, position[0] == WHITE_PAWN_ROW)
         else:
-            yield from pawn_move(-1, position[1] == BLACK_PAWN_ROW)
+            yield from pawn_move(-1, position[0] == BLACK_PAWN_ROW)
     elif piece_type == KNIGHT:
         yield from step_move(KNIGHT_DIRECTIONS)
     elif piece_type == BISHOP:
@@ -292,10 +292,15 @@ def possible_moves_from_position(board, color, position):
         yield from step_move(KING_DIRECTIONS)
 
 
-def algNotatationToPosition(p):
+def alg_notatation_to_position(p):
     c = ord(p[0]) - ord('a')
     r = ord(p[1]) - ord('1')
     return np.array([r, c])
+
+
+def position_to_alg_notation(p):
+    r, c = p
+    return chr(c + ord('a')) + chr(r + ord('1'))
 
 
 def minimax(board, color, depth, alpha, beta):
@@ -369,8 +374,8 @@ if __name__ == '__main__':
     while True:
         print_board(board)
         move = input(": ").split(' ')
-        frm = algNotatationToPosition(move[0])
-        to = algNotatationToPosition(move[1])
+        frm = alg_notatation_to_position(move[0])
+        to = alg_notatation_to_position(move[1])
         apply_move(board, (frm, to, None, None))
         ai_move = choose_best_move_minimax(board, BLACK)
         apply_move(board, ai_move)
