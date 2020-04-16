@@ -250,6 +250,13 @@ def is_in_check(board, color):
     board[king_position[0], king_position[1]] = KING | color
     return False
 
+def check_coordinates(frm, to):
+    if 0 <= frm[0] <= 7 and 0 <= frm[1] <= 7:
+        if 0 <= to[0] <= 7 and 0 <= to[1] <= 7:
+            return True
+    else:
+        print(Fore.RED + "Wrong coordinates format!\n" + Style.RESET_ALL)
+        return False
 
 def apply_move(board, move):
     frm, to, _, promotion_piece = move
@@ -376,7 +383,7 @@ def possible_moves_from_position(board, color, position):
         yield from step_move(KING_DIRECTIONS)
 
 
-def alg_notatation_to_position(p):
+def alg_notation_to_position(p):
     c = ord(p[0]) - ord('a')
     r = ord(p[1]) - ord('1')
     return np.array([r, c])
@@ -458,11 +465,11 @@ if __name__ == '__main__':
     while True:
         print_board(board)
         move = input(": ").split(' ')
-        frm = alg_notatation_to_position(move[0])
-        to = alg_notatation_to_position(move[1])
-        apply_move(board, (frm, to, None, None))
-        ai_move = choose_best_move_minimax(board, BLACK)
-        apply_move(board, ai_move)
-        print(f"cc {counter}")
-        print()
-        
+        frm = alg_notation_to_position(move[0])
+        to = alg_notation_to_position(move[1])
+        if check_coordinates(frm, to):
+            apply_move(board, (frm, to, None, None))
+            ai_move = choose_best_move_minimax(board, BLACK)
+            apply_move(board, ai_move)
+            print(f"cc {counter}")
+            print()
