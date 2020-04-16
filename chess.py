@@ -3,6 +3,8 @@
 """
 
 import numpy as np
+from colorama import Fore
+from colorama import Style
 from random import randint
 from collections import namedtuple
 import math
@@ -201,8 +203,8 @@ def score_board_with_pos_bias(board):
 
 
 PIECE_REPR = {
-    PAWN: 'p', KNIGHT: 'n', BISHOP: 'b',
-    ROOK: 'r', QUEEN: 'q', KING: 'k',
+    PAWN: 'P', KNIGHT: 'N', BISHOP: 'B',
+    ROOK: 'R', QUEEN: 'Q', KING: 'K',
 }
 
 
@@ -220,8 +222,9 @@ def print_board(board):
                 continue
             piece_str = PIECE_REPR[get_piece_type(piece)]
             if get_color(piece) == BLACK:
-                piece_str = piece_str.upper()
-            print(piece_str, end=" ")
+                print(Fore.GREEN + piece_str + Style.RESET_ALL, end=" ")
+            else:
+                print(Fore.BLUE + piece_str + Style.RESET_ALL, end=" ")
         print()
 
 
@@ -462,3 +465,4 @@ if __name__ == '__main__':
         apply_move(board, ai_move)
         print(f"cc {counter}")
         print()
+        
