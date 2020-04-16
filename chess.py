@@ -250,6 +250,7 @@ def is_in_check(board, color):
     board[king_position[0], king_position[1]] = KING | color
     return False
 
+
 def check_coordinates(frm, to):
     if 0 <= frm[0] <= 7 and 0 <= frm[1] <= 7:
         if 0 <= to[0] <= 7 and 0 <= to[1] <= 7:
@@ -257,6 +258,7 @@ def check_coordinates(frm, to):
     else:
         print(Fore.RED + "Wrong coordinates format!\n" + Style.RESET_ALL)
         return False
+
 
 def apply_move(board, move):
     frm, to, _, promotion_piece = move
@@ -462,7 +464,9 @@ def choose_best_move_minimax(board, color):
 
 
 if __name__ == '__main__':
+    rounds = 1
     while True:
+        print(Fore.YELLOW + "ROUND #" + repr(rounds) + Style.RESET_ALL)
         print_board(board)
         move = input(": ").split(' ')
         frm = alg_notation_to_position(move[0])
@@ -471,5 +475,6 @@ if __name__ == '__main__':
             apply_move(board, (frm, to, None, None))
             ai_move = choose_best_move_minimax(board, BLACK)
             apply_move(board, ai_move)
+            rounds += 1
             print(f"cc {counter}")
             print()
