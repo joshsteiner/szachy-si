@@ -252,12 +252,9 @@ def is_in_check(board, color):
 
 
 def check_coordinates(frm, to):
-    if 0 <= frm[0] <= 7 and 0 <= frm[1] <= 7:
-        if 0 <= to[0] <= 7 and 0 <= to[1] <= 7:
-            return True
-    else:
-        print(Fore.RED + "Wrong coordinates format!\n" + Style.RESET_ALL)
-        return False
+    if not (0 <= frm[0] <= 7 and 0 <= frm[1] <= 7 and
+            0 <= to[0] <= 7 and 0 <= to[1] <= 7):
+        raise Exception("Wrong coordinates format")
 
 
 def apply_move(board, move):
@@ -463,18 +460,26 @@ def choose_best_move_minimax(board, color):
     return best_moves[randint(0, len(best_moves)) - 1]
 
 
+def parse_move(move_str):
+    move = move_str.split(' ')
+    frm = alg_notation_to_position(move[0])
+    to = alg_notation_to_position(move[1])
+    check_coordinates(frm, to)
+    return Move(frm, to, None, None)
+
+
 if __name__ == '__main__':
     rounds = 1
     while True:
-        print(Fore.YELLOW + "ROUND #" + repr(rounds) + Style.RESET_ALL)
-        print_board(board)
-        move = input(": ").split(' ')
-        frm = alg_notation_to_position(move[0])
-        to = alg_notation_to_position(move[1])
-        if check_coordinates(frm, to):
-            apply_move(board, (frm, to, None, None))
+        try:
+            print(Fore.YELLOW + "ROUND #" + repr(rounds) + Style.RESET_ALL)
+            print_board(board)
+            move = parse_move(input(": "))
+            apply_move(board, move)
             ai_move = choose_best_move_minimax(board, BLACK)
             apply_move(board, ai_move)
             rounds += 1
             print(f"cc {counter}")
             print()
+        except Exception as e:
+            print(Fore.RED + str(e) + Style.RESET_ALL)
