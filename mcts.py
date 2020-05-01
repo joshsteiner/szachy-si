@@ -1,51 +1,47 @@
-""" MCTS data structure """
+""" chess using mcts """
+
+import mcts
+import chess
+import math
+import numpy as np
 from random import choice
 from pprint import pprint
-import chess
 
 
-NUMBER_OF_PLAYOUTS = 10
+NUMBER_OF_PLAYOUTS = 100
+MAX_PLAYOUT_LEN = 50
 
 
-# TEMP
-def is_final_position(position, color):
-    moves = list(chess.possible_moves(position, color))
-    return len(moves) == 0
+class UctSelectPolicy:
+    @staticmethod
+    def uct(node):
+        if node.playout_count == 0:
+            return 10000  # return high value
+        w = node.win_count
+        n = node.playout_count
+        t = node.parent.playout_count
+        return w / n + math.sqrt(2 * math.log(t) / n)
 
-
-# TEMP
-def position_status(position, color):
-    oponent_color = chess.switch_color(color)
-    possible_moves = chess.possible_moves(position, oponent_color)
-    oponent_can_move = len(list(possible_moves)) > 0
-    oponent_is_in_check = chess.is_in_check(position, oponent_color)
-    if oponent_is_in_check and not oponent_can_move:
-        return True   # True = WIN
-    else:
-        return False  # False = LOSE
-
-
-class BestChildSelectPolicy:
-    def select(self, node, color):
-        f = max if color == chess.WHITE else min
-        if node.children:
-            node = node.get_best_child(f)
+    def select(self, node):
+        while node.children:
+            node = max(node.children, key=lambda n: UctSelectPolicy.uct(n))
         return node
 
 
 class UniformRandomPlayoutPolicy:
-    def playout(self, node, color):
-        MAX_PLAYOUT_MOVES = 100
+    def playout(self, node):
         position = node.position.copy()
-        original_color = color
-        for _ in range(MAX_PLAYOUT_MOVES):
-            if is_final_position(position, color):
-                break
+        original_color = node.color
+        color = original_color
+
+        for _ in range(MAX_PLAYOUT_LEN):
+            if chess.status(position) != chess.IN_PROGRESS:
+                return
+            color = chess.switch_color(color)
             move = choice(list(chess.possible_moves(position, color)))
             chess.apply_move(position, move)
-            color = chess.switch_color(color)
-        # TODO: score
-        return position_status(position, original_color)
+
+        return chess.status(position)
 
 
 class McTreeNode:
@@ -53,19 +49,27 @@ class McTreeNode:
     playout_count = 0
 
     def __init__(self, position, color, move, parent=None):
+        assert color in [chess.WHITE, chess.BLACK]
         self.position = position
         self.move = move
         self.parent = parent
         self.color = color
         self.children = []
 
-    def add_playout(self, win):
+    def random_child(self):
+        return choice(self.children)
+
+    def add_playout(self, result):
         """ add playout result and backtrack """
         self.playout_count += 1
-        if win:
+        if self.color == result:
             self.win_count += 1
+        elif result == chess.IN_PROGRESS:
+            pass
+        elif result == chess.DRAW:
+            self.win_count += 0.25
         if self.parent:
-            self.parent.add_playout(win)
+            self.parent.add_playout(result)
 
     def add_children_from_moves(self, moves):
         for move in moves:
@@ -89,14 +93,14 @@ class McTreeNode:
         return self.win_count / self.playout_count
 
     def expand(self):
-        if self.playout_count > 0:
-            if self.children:
-                for child in self.children:
-                    child.expand()
-            else:
-                self.add_children_from_moves(
-                    chess.possible_moves(self.position, self.color)
-                )
+        assert self.children == []
+        moving_color = chess.switch_color(self.color)
+        for move in chess.possible_moves(self.position, moving_color):
+            position = self.position.copy()
+            chess.apply_move(position, move)
+            node = McTreeNode(position, moving_color,
+                              move, parent=self)
+            self.children.append(node)
 
     def get_best_child(self, f):
         best_weight = f(c.get_weight() for c in self.children)
@@ -111,23 +115,21 @@ class McTree:
         self.root = McTreeNode(board, color, None)
 
     def do_playouts(self, color):
+        global NUMBER_OF_PLAYOUTS
         for i in range(NUMBER_OF_PLAYOUTS):
-            print(f"playout {i}...")
-            self.root.expand()
+            if i % 100 == 0:
+                print(f"playout {i}...")
             node = self.select_policy.select(self.root, color)
-            r = self.playout_policy.playout(node, color)
-            node.add_playout(r)
-
-    def choose_best_move(self, color):
-        print("starting playouts ...")
-        self.do_playouts(color)
-        node = self.root.get_best_child(min if color == chess.BLACK else max)
-        return node.move
+            node.expand()
+            if node.children:
+                for child in node.children:
+                    self.playout_policy.playout(child)
+            else:
+                self.playout_policy.playout(node)
 
     def apply_move(self, move):
         for child in self.root.children:
-            if ((child.move.frm == move.frm).all()
-               and (child.move.to == move.to).all()):
+            if chess.move_eq(child.move, move):
                 self.root = child
                 self.root.parent = None
                 return
@@ -135,12 +137,28 @@ class McTree:
         chess.apply_move(position, move)
         self.root = McTreeNode(position, chess.switch_color(self.root.color), move)
 
+    def choose_best_move(self):
+        for i in range(NUMBER_OF_PLAYOUTS):
+            # select
+            promising_node = self.select_policy.select(self.root)
+            # expand
+            if chess.status(promising_node.position) == chess.IN_PROGRESS:
+                promising_node.expand()
+            # simulate
+            node_to_explore = promising_node
+            if node_to_explore.children:
+                node_to_explore = node_to_explore.random_child()
+            result = self.playout_policy.playout(node_to_explore)
+            # update
+            node_to_explore.add_playout(result)
+        return self.root.get_best_child(max).move
+
 
 if __name__ == '__main__':
     mct = McTree(
         board=chess.board,
-        color=chess.WHITE,
-        select_policy=BestChildSelectPolicy(),
+        color=chess.BLACK,  # oposite of starting color
+        select_policy=UctSelectPolicy(),
         playout_policy=UniformRandomPlayoutPolicy()
     )
 
@@ -149,5 +167,6 @@ if __name__ == '__main__':
         move = chess.parse_move(input(": "))
         mct.apply_move(move)
         chess.print_board(mct.root.position)
-        ai_move = mct.choose_best_move(chess.BLACK)
+        print("thinking...")
+        ai_move = mct.choose_best_move()
         mct.apply_move(ai_move)

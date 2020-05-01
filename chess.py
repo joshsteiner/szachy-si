@@ -12,6 +12,8 @@ import math
 counter = 0
 
 SEARCH_DEPTH = 4
+DRAW = 2
+IN_PROGRESS = 3
 
 # piece format:
 #  3 bits piece type, 1 bit color
@@ -147,6 +149,25 @@ POSITION_BIAS = [
 
 Move = namedtuple('Move', 'frm to capture promotion')
 PartialMove = namedtuple('PartialMove', 'to capture promotion')
+
+
+def move_eq(m1, m2):
+    return (m1.frm == m2.frm).all() and (m1.to == m2.to).all()
+
+
+def status(board):
+    if len(list(possible_moves(board, WHITE))) == 0:
+        if is_in_check(board, WHITE):
+            return BLACK
+        else:
+            return DRAW
+    elif len(list(possible_moves(board, BLACK))) == 0:
+        if is_in_check(board, BLACK):
+            return WHITE
+        else:
+            return DRAW
+    else:
+        return IN_PROGRESS
 
 
 def switch_color(color):
