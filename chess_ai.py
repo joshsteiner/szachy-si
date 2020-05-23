@@ -141,7 +141,8 @@ class ChessAlphBetaPlayer(generic_mcts.AiPlayer):
         return generic_alpha_beta.choose_best_move_minimax(
             self.game, self.board,
             score_board_with_pos_bias,
-            self.search_depth, False)
+            self.search_depth,
+            self.board.turn == chess.WHITE)
 
     def apply_move(self, move: Move):
         self.game.apply_move(move, self.board)
