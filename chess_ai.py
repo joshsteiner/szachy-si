@@ -350,7 +350,7 @@ def play_against_computer(method, **kwargs):
                 print("thinking...")
                 ai_move = generic_alpha_beta.choose_best_move_minimax(
                     game, board,
-                    kwargs['heuristic'],
+                    kwargs['heuristics'],
                     kwargs['depth'],
                     False
                 )
@@ -365,4 +365,4 @@ if __name__ == '__main__':
                           playout_policy=UniformRandomPlayoutPolicy(),
                           number_of_playouts=200)
 
-    play_against_computer('alpha beta', heuristic=score_board_stockfish, depth=3)
+    play_against_computer('alpha beta', heuristics=score_board_stockfish, depth=3)
