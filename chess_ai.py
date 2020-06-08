@@ -313,18 +313,17 @@ def score_board_stockfish(board):
         return 0
     return score
 
-
-if __name__ == '__main__':
+def play_against_computer(method, **kwargs):
     load_stockfish()
 
-    if True:
+    if method == 'mcts':
         game = Game
 
         mct = generic_mcts.McTree(
             game,
-            select_policy=generic_mcts.UctSelectPolicy(),
-            playout_policy=UniformRandomPlayoutPolicy(),
-            number_of_playouts=200,
+            select_policy=kwargs['select_policy'],
+            playout_policy=kwargs['playout_policy'],
+            number_of_playouts=kwargs['number_of_playouts'],
         )
 
         while True:
@@ -336,7 +335,7 @@ if __name__ == '__main__':
             ai_move = mct.choose_best_move()
             mct.apply_move(ai_move)
             print()
-    else:
+    elif method == 'alpha beta':
         try:
             load_stockfish()
 
@@ -351,11 +350,19 @@ if __name__ == '__main__':
                 print("thinking...")
                 ai_move = generic_alpha_beta.choose_best_move_minimax(
                     game, board,
-                    score_board_stockfish,
-                    3,
+                    kwargs['heuristic'],
+                    kwargs['depth'],
                     False
                 )
                 game.apply_move(ai_move, board)
                 print()
         finally:
             stockfish.quit()
+
+
+if __name__ == '__main__':
+    play_against_computer('mcts', select_policy=generic_mcts.UctSelectPolicy(),
+                          playout_policy=UniformRandomPlayoutPolicy(),
+                          number_of_playouts=200)
+
+    play_against_computer('alpha beta', heuristic=score_board_stockfish, depth=3)
