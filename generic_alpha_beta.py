@@ -54,7 +54,7 @@ def choose_best_move_minimax(game, game_state, heuristic, search_depth, is_maxin
         game.apply_move(move, game_state)
         child_score = minimax(
             game, game_state, heuristic, search_depth,
-            -math.inf, math.inf, is_maxing_player
+            -math.inf, math.inf, not is_maxing_player
         )
         game.undo_move(move, game_state)
         if f(child_score, best_score) == child_score:

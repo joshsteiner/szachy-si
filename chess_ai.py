@@ -1,10 +1,26 @@
 import chess
+import platform
+import chess.engine
 import generic_mcts
 from generic_mcts import Move
 import generic_alpha_beta
 from colorama import Fore
 from colorama import Style
 from random import choice
+
+
+stockfish = None
+
+
+def load_stockfish():
+    system = platform.system()
+    if system == 'Linux':
+        fn = './stockfish/stockfish_linux'
+    elif system == 'Windows':
+        fn = './stockfish/stockfish_windows.exe'
+    elif system == 'Darwin':
+        fn = './stockfish/stockfish_mac'
+    return chess.engine.SimpleEngine.popen_uci(fn)
 
 
 class Status:
@@ -290,8 +306,16 @@ def score_board_with_pos_bias(board):
     return s
 
 
+def score_board_stockfish(board):
+    info = stockfish.analyse(board, chess.engine.Limit(depth=1), info=chess.engine.INFO_SCORE)
+    score = info['score'].white().score(mate_score=10000)
+    if info['score'].is_mate():
+        return 0
+    return score
+
+
 if __name__ == '__main__':
-    if True:
+    if False:
         game = Game
 
         mct = generic_mcts.McTree(
@@ -311,20 +335,25 @@ if __name__ == '__main__':
             mct.apply_move(ai_move)
             print()
     else:
-        game = Game
-        board = game.initial_state()
+        try:
+            stockfish = load_stockfish()
 
-        while True:
-            game.show(board)
-            move = game.parse_move(input(": "))
-            game.apply_move(move, board)
-            game.show(board)
-            print("thinking...")
-            ai_move = generic_alpha_beta.choose_best_move_minimax(
-                game, board,
-                score_board_with_pos_bias,
-                5,
-                False
-            )
-            game.apply_move(ai_move, board)
-            print()
+            game = Game
+            board = game.initial_state()
+
+            while True:
+                game.show(board)
+                move = game.parse_move(input(": "))
+                game.apply_move(move, board)
+                game.show(board)
+                print("thinking...")
+                ai_move = generic_alpha_beta.choose_best_move_minimax(
+                    game, board,
+                    score_board_stockfish,
+                    3,
+                    False
+                )
+                game.apply_move(ai_move, board)
+                print()
+        finally:
+            stockfish.quit()
