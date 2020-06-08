@@ -20,7 +20,7 @@ def load_stockfish():
         fn = './stockfish/stockfish_windows.exe'
     elif system == 'Darwin':
         fn = './stockfish/stockfish_mac'
-    return chess.engine.SimpleEngine.popen_uci(fn)
+    stockfish = chess.engine.SimpleEngine.popen_uci(fn)
 
 
 class Status:
@@ -315,7 +315,9 @@ def score_board_stockfish(board):
 
 
 if __name__ == '__main__':
-    if False:
+    load_stockfish()
+
+    if True:
         game = Game
 
         mct = generic_mcts.McTree(
@@ -336,7 +338,7 @@ if __name__ == '__main__':
             print()
     else:
         try:
-            stockfish = load_stockfish()
+            load_stockfish()
 
             game = Game
             board = game.initial_state()
