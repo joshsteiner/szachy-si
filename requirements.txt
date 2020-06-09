@@ -1,4 +1,2 @@
 colorama==0.4.3
-pkg-resources==0.0.0
-pycodestyle==2.6.0
 python-chess==0.31.1

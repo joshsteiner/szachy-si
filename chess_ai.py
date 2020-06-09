@@ -1,18 +1,18 @@
 import chess
+import random
 import platform
 import chess.engine
 import generic_mcts
 from generic_mcts import Move
 import generic_alpha_beta
+from generic_alpha_beta import choose_best_move_minimax
 from colorama import Fore
 from colorama import Style
 from random import choice
 
 
-stockfish = None
-
-
 def load_stockfish():
+    global stockfish
     system = platform.system()
     if system == 'Linux':
         fn = './stockfish/stockfish_linux'
@@ -50,16 +50,6 @@ class Game(generic_mcts.Game):
             return 1
         elif result == Status.DRAW:
             return 0.25
-        # w normalnych warunkach MCTS powinien rozgrywać grę do końca,
-        # jednak przy ograniczonej liczbie ruchów rzadko dochodzi do
-        # rozstrzygnięcia
-        elif result == Status.IN_PROGRESS:
-            score = score_board_with_pos_bias(game_state)
-            if ((score > 0 and game_state.turn == chess.WHITE)
-               or (score < 0 and game_state.turn == chess.BLACK)):
-                return 0.5
-            else:
-                return 0
         else:
             return 0
 
@@ -120,13 +110,13 @@ class Game(generic_mcts.Game):
 
 
 class ChessMctsPlayer(generic_mcts.AiPlayer):
-    def __init__(self, max_playout_len=100, number_of_playouts=200, colors=False):
+    def __init__(self, playout_policy, max_playout_len=50, number_of_playouts=200, colors=False):
         self.game = Game
         self.colors = colors
         self.mct = generic_mcts.McTree(
             self.game,
             select_policy=generic_mcts.UctSelectPolicy(),
-            playout_policy=UniformRandomPlayoutPolicy(max_playout_len),
+            playout_policy=playout_policy,
             number_of_playouts=number_of_playouts,
         )
 
@@ -144,11 +134,12 @@ class ChessMctsPlayer(generic_mcts.AiPlayer):
 
 
 class ChessAlphBetaPlayer(generic_mcts.AiPlayer):
-    def __init__(self, search_depth=5, colors=False):
+    def __init__(self, heuristic, search_depth=5, colors=False):
         self.game = Game
         self.colors = colors
         self.board = self.game.initial_state()
         self.search_depth = search_depth
+        self.heuristic = heuristic
 
     def status(self) -> Status:
         return self.game.status(self.board)
@@ -156,7 +147,7 @@ class ChessAlphBetaPlayer(generic_mcts.AiPlayer):
     def choose_move(self) -> Move:
         return generic_alpha_beta.choose_best_move_minimax(
             self.game, self.board,
-            score_board_with_pos_bias,
+            self.heuristic,
             self.search_depth,
             self.board.turn == chess.WHITE)
 
@@ -172,6 +163,7 @@ class ChessRandomPlayer(generic_mcts.AiPlayer):
         self.game = Game
         self.colors = colors
         self.board = self.game.initial_state()
+        random.seed()
 
     def status(self) -> Status:
         return self.game.status(self.board)
@@ -309,9 +301,8 @@ def score_board_with_pos_bias(board):
 def score_board_stockfish(board):
     info = stockfish.analyse(board, chess.engine.Limit(depth=1), info=chess.engine.INFO_SCORE)
     score = info['score'].white().score(mate_score=10000)
-    if info['score'].is_mate():
-        return 0
     return score
+
 
 def play_against_computer(method, **kwargs):
     load_stockfish()

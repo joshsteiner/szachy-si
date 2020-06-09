@@ -1,11 +1,16 @@
+import os
 from chess_ai import Status
 from chess_ai import ChessMctsPlayer
 from chess_ai import ChessAlphBetaPlayer
 from chess_ai import ChessRandomPlayer
+from chess_ai import score_board_stockfish, score_board_with_pos_bias
+from chess_ai import load_stockfish
 from generic_mcts import AiPlayer
 
 
 def self_play(player1: AiPlayer, player2: AiPlayer, show=False):
+    player1 = player1()
+    player2 = player2()
     while True:
         if show:
             player1.show()
@@ -38,22 +43,11 @@ def play(name, white, black, times=1, show=False):
             result = self_play(white, black, show=show)
             if result == Status.DRAW:
                 scores['draw'] += 1
-                print('draw')
             elif result == Status.WHITE_WIN:
                 scores['white'] += 1
-                print('white')
             else:
                 scores['black'] += 1
-                print('black')
         except Exception as e:
             print(e)
     print(scores)
 
-
-play(
-    "random vs alpha beta 2",
-    white=ChessAlphBetaPlayer(3, colors=True),
-    black=ChessAlphBetaPlayer(3, colors=True),
-    times=1,
-    show=True,
-)
