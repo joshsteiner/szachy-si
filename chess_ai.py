@@ -23,6 +23,21 @@ def load_stockfish():
     stockfish = chess.engine.SimpleEngine.popen_uci(fn)
 
 
+class UniformRandomPlayoutPolicy:
+    def __init__(self, max_playout_len=100):
+        self.max_playout_len = max_playout_len
+
+    def playout(self, node):
+        state = node.game_state.copy()
+        for _ in range(self.max_playout_len):
+            if state.result() != '*':
+                return
+            move = choice(list(state.legal_moves))
+            state.push(move)
+
+        return Game.status(state)
+
+
 class Status:
     IN_PROGRESS = 0
     DRAW = 1
@@ -110,7 +125,8 @@ class Game(generic_mcts.Game):
 
 
 class ChessMctsPlayer(generic_mcts.AiPlayer):
-    def __init__(self, playout_policy, max_playout_len=50, number_of_playouts=200, colors=False):
+    def __init__(self, playout_policy=UniformRandomPlayoutPolicy(),
+                 max_playout_len=50, number_of_playouts=200, colors=False):
         self.game = Game
         self.colors = colors
         self.mct = generic_mcts.McTree(
@@ -177,20 +193,6 @@ class ChessRandomPlayer(generic_mcts.AiPlayer):
     def show(self):
         self.game.show(self.board, colors=self.colors)
 
-
-class UniformRandomPlayoutPolicy:
-    def __init__(self, max_playout_len=100):
-        self.max_playout_len = max_playout_len
-
-    def playout(self, node):
-        state = node.game_state.copy()
-        for _ in range(self.max_playout_len):
-            if state.result() != '*':
-                return
-            move = choice(list(state.legal_moves))
-            state.push(move)
-
-        return Game.status(state)
 
 
 POSITION_BIAS = {
@@ -352,8 +354,10 @@ def play_against_computer(method, **kwargs):
 
 
 if __name__ == '__main__':
+    play_against_computer('alpha beta', heuristics=score_board_stockfish, depth=2)
+
+    """
     play_against_computer('mcts', select_policy=generic_mcts.UctSelectPolicy(),
                           playout_policy=UniformRandomPlayoutPolicy(),
                           number_of_playouts=200)
-
-    play_against_computer('alpha beta', heuristics=score_board_stockfish, depth=3)
+    """

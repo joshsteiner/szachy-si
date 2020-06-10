@@ -91,7 +91,7 @@ class McTreeNode:
 
     def add_playout(self, result, score):
         self.playout_count += 1
-        self.win_count = score(result, self.game_state)
+        self.win_count += score(result, self.game_state)
         if self.parent:
             self.parent.add_playout(result, score)
 

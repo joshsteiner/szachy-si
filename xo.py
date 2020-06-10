@@ -1,7 +1,7 @@
 """ tic tac toe using mcts """
 
 import generic_mcts
-from random import choice
+from random import choice, seed
 
 
 def opposite_player(p):
@@ -85,13 +85,13 @@ class XoGame(generic_mcts.Game):
     def score(result, game_state):
         assert result != XoStatus.IN_PROGRESS
         if result == XoStatus.DRAW:
-            return 0.25
+            return 0.5
         elif (result == XoStatus.X_WIN and
               game_state.player == 'x'):
-            return 2
+            return 1
         elif (result == XoStatus.O_WIN and
               game_state.player == 'o'):
-            return 2
+            return 1
         else:
             return 0
 
@@ -138,7 +138,7 @@ class XoUniformRandomPlayoutPolicy:
         st = XoGame.status(node.game_state)
         if ((st == XoStatus.X_WIN and game_state.player == 'o')
            or (st == XoStatus.O_WIN and game_state.player == 'x')):
-            node.win_count = -10000
+            node.win_count = -100
             return
 
         while XoGame.status(game_state) == XoStatus.IN_PROGRESS:
@@ -149,13 +149,15 @@ class XoUniformRandomPlayoutPolicy:
 
 
 if __name__ == '__main__':
+    seed()
+
     game = XoGame
 
     mct = generic_mcts.McTree(
         game,
         select_policy=generic_mcts.UctSelectPolicy(),
         playout_policy=XoUniformRandomPlayoutPolicy(),
-        number_of_playouts=500,
+        number_of_playouts=1000,
     )
 
     while True:

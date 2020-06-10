@@ -50,4 +50,3 @@ def play(name, white, black, times=1, show=False):
         except Exception as e:
             print(e)
     print(scores)
-
